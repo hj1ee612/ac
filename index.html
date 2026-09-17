@@ -1,0 +1,766 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#FFB6D9">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="가계부">
+  <title>가계부</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans KR', sans-serif;
+      background: #fff9fc;
+      color: #333;
+      padding: 20px;
+      padding-top: max(20px, env(safe-area-inset-top));
+      padding-bottom: max(20px, env(safe-area-inset-bottom));
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 500px;
+      margin: 0 auto;
+    }
+
+    .header {
+      margin-bottom: 32px;
+    }
+
+    .header h1 {
+      font-size: 28px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .header p {
+      font-size: 14px;
+      color: #999;
+    }
+
+    .accounts-grid {
+      display: grid;
+      gap: 12px;
+      margin-bottom: 32px;
+    }
+
+    .account-card {
+      padding: 20px;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      border: 2px solid transparent;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+    }
+
+    .account-card.inactive {
+      background: #f5e8f0;
+    }
+
+    .account-card.card1.active {
+      background: #FFB6D9;
+      border-color: #FFB6D9;
+      box-shadow: 0 4px 12px rgba(255, 107, 161, 0.15);
+    }
+
+    .account-card.card2.active {
+      background: #FFA3C8;
+      border-color: #FFA3C8;
+      box-shadow: 0 4px 12px rgba(255, 107, 161, 0.15);
+    }
+
+    .account-card.card3.active {
+      background: #FF8FB3;
+      border-color: #FF8FB3;
+      box-shadow: 0 4px 12px rgba(255, 107, 161, 0.15);
+    }
+
+    .account-card.active p {
+      color: white;
+    }
+
+    .account-info {
+      flex: 1;
+    }
+
+    .account-name {
+      font-size: 13px;
+      font-weight: 500;
+      margin-bottom: 8px;
+      opacity: 0.9;
+    }
+
+    .account-card.inactive .account-name {
+      color: #666;
+    }
+
+    .account-balance {
+      font-size: 22px;
+      font-weight: 600;
+    }
+
+    .account-card.inactive .account-balance {
+      color: #333;
+    }
+
+    .account-stats {
+      font-size: 12px;
+      opacity: 0.8;
+      margin-top: 8px;
+    }
+
+    .account-card.inactive .account-stats {
+      color: #666;
+    }
+
+    .edit-btn {
+      background: rgba(255, 255, 255, 0.3);
+      border: none;
+      color: white;
+      border-radius: 6px;
+      padding: 6px 10px;
+      cursor: pointer;
+      font-size: 12px;
+      transition: background 0.2s;
+    }
+
+    .account-card.inactive .edit-btn {
+      background: rgba(0, 0, 0, 0.1);
+      color: #666;
+    }
+
+    .edit-btn:hover {
+      background: rgba(255, 255, 255, 0.5);
+    }
+
+    .account-card.inactive .edit-btn:hover {
+      background: rgba(0, 0, 0, 0.2);
+    }
+
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal.active {
+      display: flex;
+    }
+
+    .modal-content {
+      background: white;
+      border-radius: 16px;
+      padding: 24px;
+      width: 90%;
+      max-width: 400px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    }
+
+    .modal-header {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 20px;
+    }
+
+    .modal-buttons {
+      display: flex;
+      gap: 12px;
+      margin-top: 20px;
+    }
+
+    .modal-buttons button {
+      flex: 1;
+      padding: 12px;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .modal-btn-confirm {
+      background: #FFB6D9;
+      color: white;
+    }
+
+    .modal-btn-confirm:hover {
+      background: #FF9FCC;
+    }
+
+    .modal-btn-cancel {
+      background: #f0e0e8;
+      color: #666;
+    }
+
+    .modal-btn-cancel:hover {
+      background: #e8d0e0;
+    }
+
+    .form-box {
+      background: #fff;
+      padding: 24px;
+      border-radius: 12px;
+      margin-bottom: 24px;
+      border: 1px solid #f0e0e8;
+    }
+
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      color: #666;
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .form-input, .form-select {
+      width: 100%;
+      padding: 10px 12px;
+      font-size: 14px;
+      border: 1px solid #e8d5e0;
+      border-radius: 8px;
+      font-family: inherit;
+      background: #fff;
+    }
+
+    .form-input:focus, .form-select:focus {
+      outline: none;
+      border-color: #FFB6D9;
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .submit-btn {
+      width: 100%;
+      padding: 12px;
+      background: #FFB6D9;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .submit-btn:hover {
+      background: #FF9FCC;
+    }
+
+    .section-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: #666;
+      margin-bottom: 16px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .period-tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+      border-bottom: 1px solid #f0e0e8;
+    }
+
+    .period-tab {
+      padding: 12px 16px;
+      background: none;
+      border: none;
+      font-size: 13px;
+      font-weight: 600;
+      color: #999;
+      cursor: pointer;
+      transition: all 0.2s;
+      border-bottom: 2px solid transparent;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .period-tab.active {
+      color: #FFB6D9;
+      border-bottom-color: #FFB6D9;
+    }
+
+    .period-tab:hover {
+      color: #FF9FCC;
+    }
+
+    .period-stats {
+      background: #fff;
+      padding: 16px;
+      border-radius: 10px;
+      margin-bottom: 16px;
+      border: 1px solid #f0e0e8;
+      text-align: center;
+    }
+
+    .period-stats-label {
+      font-size: 12px;
+      color: #999;
+      margin-bottom: 6px;
+    }
+
+    .period-stats-amount {
+      font-size: 24px;
+      font-weight: 600;
+      color: #FF6BA1;
+    }
+
+    .transactions-list {
+      display: grid;
+      gap: 8px;
+    }
+
+    .transaction-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 16px;
+      background: #fff;
+      border-radius: 10px;
+      border: 1px solid #f0e0e8;
+    }
+
+    .transaction-info {
+      flex: 1;
+    }
+
+    .transaction-desc {
+      font-size: 14px;
+      font-weight: 500;
+      margin-bottom: 4px;
+      color: #333;
+    }
+
+    .transaction-date {
+      font-size: 12px;
+      color: #999;
+    }
+
+    .transaction-amount {
+      font-size: 14px;
+      font-weight: 600;
+      min-width: 80px;
+      text-align: right;
+      margin-right: 12px;
+    }
+
+    .amount-expense {
+      color: #FF6BA1;
+    }
+
+    .amount-income {
+      color: #4CAF50;
+    }
+
+    .delete-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: #ddd;
+      font-size: 18px;
+      padding: 4px;
+      transition: color 0.2s;
+    }
+
+    .delete-btn:hover {
+      color: #FF6BA1;
+    }
+
+    .empty-message {
+      text-align: center;
+      padding: 40px 20px;
+      color: #ccc;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>가계부</h1>
+      <p id="today"></p>
+    </div>
+
+    <div class="accounts-grid" id="accountsContainer"></div>
+
+    <div class="form-box">
+      <form id="transactionForm">
+        <div class="form-group">
+          <label class="form-label">내용</label>
+          <input type="text" id="description" class="form-input" placeholder="카페, 마트 등" required>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">금액</label>
+            <input type="number" id="amount" class="form-input" placeholder="0" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">구분</label>
+            <select id="type" class="form-select">
+              <option value="expense">지출</option>
+              <option value="income">수입</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">날짜</label>
+          <input type="date" id="date" class="form-input" required>
+        </div>
+
+        <button type="submit" class="submit-btn">+ 기록하기</button>
+      </form>
+    </div>
+
+    <div>
+      <h2 class="section-title">거래 내역</h2>
+      
+      <div class="period-tabs">
+        <button class="period-tab active" onclick="setPeriod('today')">오늘</button>
+        <button class="period-tab" onclick="setPeriod('week')">이번주</button>
+        <button class="period-tab" onclick="setPeriod('month')">이번달</button>
+      </div>
+
+      <div id="periodStats" class="period-stats">
+        <div class="period-stats-label">누적 지출</div>
+        <div class="period-stats-amount" id="periodAmount">₩0</div>
+      </div>
+
+      <div id="transactionsList" class="transactions-list"></div>
+    </div>
+  </div>
+
+  <!-- 계좌 편집 모달 -->
+  <div class="modal" id="editModal">
+    <div class="modal-content">
+      <div class="modal-header">계좌 정보 수정</div>
+      <div class="form-group">
+        <label class="form-label">계좌명</label>
+        <input type="text" id="editAccountName" class="form-input">
+      </div>
+      <div class="form-group">
+        <label class="form-label">잔액</label>
+        <input type="number" id="editAccountBalance" class="form-input">
+      </div>
+      <div class="modal-buttons">
+        <button class="modal-btn-cancel" onclick="closeEditModal()">취소</button>
+        <button class="modal-btn-confirm" onclick="saveAccountEdit()">저장</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const defaultAccounts = [
+      { id: 1, name: '체크카드 1', balance: 1500000, class: 'card1' },
+      { id: 2, name: '체크카드 2', balance: 2300000, class: 'card2' },
+      { id: 3, name: '대출', balance: -5000000, class: 'card3' }
+    ];
+
+    function loadData() {
+      try {
+        if (localStorage && localStorage.getItem('accounts')) {
+          const saved = JSON.parse(localStorage.getItem('accounts'));
+          const savedTx = JSON.parse(localStorage.getItem('transactions'));
+          return { accounts: saved, transactions: savedTx };
+        }
+      } catch (e) {
+        console.log('localStorage 사용 불가');
+      }
+      
+      try {
+        if (sessionStorage && sessionStorage.getItem('accounts')) {
+          const saved = JSON.parse(sessionStorage.getItem('accounts'));
+          const savedTx = JSON.parse(sessionStorage.getItem('transactions'));
+          return { accounts: saved, transactions: savedTx };
+        }
+      } catch (e) {
+        console.log('sessionStorage 사용 불가');
+      }
+
+      return { accounts: defaultAccounts, transactions: [] };
+    }
+
+    function saveData() {
+      try {
+        if (localStorage) {
+          localStorage.setItem('accounts', JSON.stringify(accounts));
+          localStorage.setItem('transactions', JSON.stringify(transactions));
+        }
+      } catch (e) {
+        console.log('localStorage 저장 실패');
+      }
+      
+      try {
+        if (sessionStorage) {
+          sessionStorage.setItem('accounts', JSON.stringify(accounts));
+          sessionStorage.setItem('transactions', JSON.stringify(transactions));
+        }
+      } catch (e) {
+        console.log('sessionStorage 저장 실패');
+      }
+    }
+
+    const loadedData = loadData();
+    let accounts = loadedData.accounts;
+    let transactions = loadedData.transactions;
+    let selectedAccountId = 1;
+    let editingAccountId = null;
+    let selectedPeriod = 'today';
+
+    function formatDate(dateString) {
+      const date = new Date(dateString + 'T00:00:00');
+      return date.toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' });
+    }
+
+    function formatCurrency(value) {
+      return new Intl.NumberFormat('ko-KR', {
+        style: 'currency',
+        currency: 'KRW',
+        maximumFractionDigits: 0
+      }).format(value);
+    }
+
+    function setTodayDate() {
+      const today = new Date();
+      document.getElementById('today').textContent = today.toLocaleDateString('ko-KR', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+      document.getElementById('date').valueAsDate = today;
+    }
+
+    function getTransactionsByPeriod(accountId, period) {
+      const today = new Date();
+      const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+      const startOfWeek = new Date(today);
+      startOfWeek.setDate(today.getDate() - today.getDay());
+      const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+
+      let startDate;
+      if (period === 'today') {
+        startDate = startOfDay;
+      } else if (period === 'week') {
+        startDate = startOfWeek;
+      } else if (period === 'month') {
+        startDate = startOfMonth;
+      }
+
+      return transactions.filter(t => {
+        if (t.accountId !== accountId) return false;
+        const tDate = new Date(t.date + 'T00:00:00');
+        return tDate >= startDate;
+      });
+    }
+
+    function getPeriodExpense(accountId, period) {
+      const filtered = getTransactionsByPeriod(accountId, period);
+      return filtered
+        .filter(t => t.amount < 0)
+        .reduce((sum, t) => sum + Math.abs(t.amount), 0);
+    }
+
+    function setPeriod(period) {
+      selectedPeriod = period;
+      document.querySelectorAll('.period-tab').forEach(tab => {
+        tab.classList.remove('active');
+      });
+      event.target.classList.add('active');
+      renderTransactions();
+    }
+
+    function renderAccounts() {
+      const container = document.getElementById('accountsContainer');
+      container.innerHTML = '';
+
+      accounts.forEach(account => {
+        const card = document.createElement('div');
+        card.className = `account-card ${account.class} ${account.id === selectedAccountId ? 'active' : 'inactive'}`;
+        
+        const todayExpense = getPeriodExpense(account.id, 'today');
+        
+        card.innerHTML = `
+          <div class="account-info">
+            <p class="account-name">${account.name}</p>
+            <p class="account-balance">${formatCurrency(account.balance)}</p>
+            <p class="account-stats">오늘 지출: ${formatCurrency(todayExpense)}</p>
+          </div>
+          <button class="edit-btn" onclick="event.stopPropagation(); openEditModal(${account.id})">수정</button>
+        `;
+        
+        card.addEventListener('click', () => {
+          selectedAccountId = account.id;
+          renderAccounts();
+          renderTransactions();
+        });
+        container.appendChild(card);
+      });
+    }
+
+    function renderTransactions() {
+      const container = document.getElementById('transactionsList');
+      const filteredTransactions = getTransactionsByPeriod(selectedAccountId, selectedPeriod);
+
+      const periodExpense = getPeriodExpense(selectedAccountId, selectedPeriod);
+      document.getElementById('periodAmount').textContent = formatCurrency(periodExpense);
+
+      if (filteredTransactions.length === 0) {
+        container.innerHTML = '<div class="empty-message">기록된 거래가 없습니다</div>';
+        return;
+      }
+
+      container.innerHTML = '';
+      filteredTransactions.forEach(transaction => {
+        const item = document.createElement('div');
+        item.className = 'transaction-item';
+        
+        const amountClass = transaction.amount < 0 ? 'amount-expense' : 'amount-income';
+        const amountPrefix = transaction.amount < 0 ? '−' : '+';
+        
+        item.innerHTML = `
+          <div class="transaction-info">
+            <p class="transaction-desc">${transaction.description}</p>
+            <p class="transaction-date">${formatDate(transaction.date)}</p>
+          </div>
+          <p class="transaction-amount ${amountClass}">${amountPrefix}${formatCurrency(Math.abs(transaction.amount))}</p>
+          <button class="delete-btn">✕</button>
+        `;
+
+        item.querySelector('.delete-btn').addEventListener('click', () => {
+          deleteTransaction(transaction.id);
+        });
+
+        container.appendChild(item);
+      });
+    }
+
+    function addTransaction(e) {
+      e.preventDefault();
+
+      const description = document.getElementById('description').value;
+      const amount = parseFloat(document.getElementById('amount').value);
+      const type = document.getElementById('type').value;
+      const date = document.getElementById('date').value;
+
+      if (!description || !amount || !date) return;
+
+      const transaction = {
+        id: Date.now(),
+        accountId: selectedAccountId,
+        description,
+        amount: type === 'expense' ? -amount : amount,
+        type,
+        date
+      };
+
+      transactions.unshift(transaction);
+
+      const account = accounts.find(a => a.id === selectedAccountId);
+      if (account) {
+        account.balance += transaction.amount;
+      }
+
+      saveData();
+
+      document.getElementById('transactionForm').reset();
+      document.getElementById('date').valueAsDate = new Date();
+
+      renderAccounts();
+      renderTransactions();
+    }
+
+    function deleteTransaction(id) {
+      const transaction = transactions.find(t => t.id === id);
+      if (!transaction) return;
+
+      const account = accounts.find(a => a.id === transaction.accountId);
+      if (account) {
+        account.balance -= transaction.amount;
+      }
+
+      transactions = transactions.filter(t => t.id !== id);
+
+      saveData();
+
+      renderAccounts();
+      renderTransactions();
+    }
+
+    function openEditModal(accountId) {
+      const account = accounts.find(a => a.id === accountId);
+      if (!account) return;
+      
+      editingAccountId = accountId;
+      document.getElementById('editAccountName').value = account.name;
+      document.getElementById('editAccountBalance').value = account.balance;
+      document.getElementById('editModal').classList.add('active');
+    }
+
+    function closeEditModal() {
+      document.getElementById('editModal').classList.remove('active');
+      editingAccountId = null;
+    }
+
+    function saveAccountEdit() {
+      const account = accounts.find(a => a.id === editingAccountId);
+      if (!account) return;
+
+      const newName = document.getElementById('editAccountName').value;
+      const newBalance = parseFloat(document.getElementById('editAccountBalance').value);
+
+      if (!newName) {
+        alert('계좌명을 입력해주세요');
+        return;
+      }
+
+      account.name = newName;
+      account.balance = newBalance;
+
+      saveData();
+      renderAccounts();
+      renderTransactions();
+      closeEditModal();
+    }
+
+    document.getElementById('editModal').addEventListener('click', (e) => {
+      if (e.target === document.getElementById('editModal')) {
+        closeEditModal();
+      }
+    });
+
+    setTodayDate();
+    renderAccounts();
+    renderTransactions();
+
+    document.getElementById('transactionForm').addEventListener('submit', addTransaction);
+  </script>
+</body>
+</html>
